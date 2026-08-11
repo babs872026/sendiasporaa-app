@@ -412,7 +412,6 @@ function App() {
       <header>
         <div>
           <h1 className="title">Blog de Notas — Cliente</h1>
-          <p>Backend: {API}</p>
         </div>
         <div>
           {token ? (

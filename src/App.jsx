@@ -2,7 +2,15 @@ import { useEffect, useState, useRef } from 'react'
 import { jsPDF } from 'jspdf'
 import './App.css'
 
-const API = import.meta.env.VITE_API_BASE || 'http://localhost:3000'
+function getApiBaseUrl() {
+  if (import.meta.env.VITE_API_BASE) return import.meta.env.VITE_API_BASE.replace(/\/$/, '')
+  if (typeof window === 'undefined') return 'http://localhost:3000'
+  const host = window.location.hostname
+  if (host === 'localhost' || host === '127.0.0.1') return 'http://localhost:3000'
+  return `http://${host}:3000`
+}
+
+const API = getApiBaseUrl()
 
 function App() {
   const [notes, setNotes] = useState([])

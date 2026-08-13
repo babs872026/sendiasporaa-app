@@ -1,3 +1,5 @@
+require('dotenv').config({ path: require('path').resolve(__dirname, '.env') });
+
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
@@ -6,18 +8,23 @@ const { MongoClient, ObjectId } = require('mongodb');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
 
-const allowedOrigins = (process.env.CORS_ORIGINS || '')
+const allowedOrigins = (process.env.CORS_ORIGINS || '*')
   .split(',')
   .map((o) => o.trim())
   .filter(Boolean)
 
+function isOriginAllowed(origin) {
+  if (!origin) return true;
+  if (allowedOrigins.length === 0 || allowedOrigins.includes('*')) return true;
+  return allowedOrigins.includes(origin);
+}
+
 app.use(cors({
   origin(origin, callback) {
     // Allow server-to-server and non-browser clients with no origin header
-    if (!origin) return callback(null, true)
-    if (allowedOrigins.length === 0) return callback(null, true)
-    if (allowedOrigins.includes(origin)) return callback(null, true)
+    if (isOriginAllowed(origin)) return callback(null, true)
     return callback(new Error('Not allowed by CORS'))
   },
 }));
@@ -41,7 +48,7 @@ async function start() {
   await Notes.createIndex({ user_id: 1 }).catch(()=>{});
   await TimeEntries.createIndex({ user_id: 1 }).catch(()=>{});
 
-  app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
+  app.listen(PORT, HOST, () => console.log(`Server listening on ${HOST}:${PORT}`));
 }
 
 function toPublic(doc) {

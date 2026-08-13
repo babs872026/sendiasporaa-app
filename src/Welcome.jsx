@@ -1,5 +1,14 @@
 import { useState } from 'react'
-const API = import.meta.env.VITE_API_BASE || 'http://localhost:3000'
+
+function getApiBaseUrl() {
+  if (import.meta.env.VITE_API_BASE) return import.meta.env.VITE_API_BASE.replace(/\/$/, '')
+  if (typeof window === 'undefined') return 'http://localhost:3000'
+  const host = window.location.hostname
+  if (host === 'localhost' || host === '127.0.0.1') return 'http://localhost:3000'
+  return `http://${host}:3000`
+}
+
+const API = getApiBaseUrl()
 
 export default function Welcome() {
   const [user, setUser] = useState('')
@@ -50,7 +59,7 @@ export default function Welcome() {
   return (
     <div className="welcome-root">
       <div className="welcome-card">
-        <h1 className="welcome-title">Bienvenido a Blog de Notas</h1>
+        <h1 className="welcome-title">Bienvenido a SENDIASPORAA</h1>
         <p>Crea y gestiona tus notas y registros horarios. Inicia sesión para continuar.</p>
         <form onSubmit={doLogin} style={{display:'flex',flexDirection:'column',gap:8}}>
           <input placeholder="usuario" value={user} onChange={e=>{ setUser(e.target.value); setError('') }} />

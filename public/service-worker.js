@@ -1,5 +1,5 @@
-const CACHE_VERSION = 'sendiasporaa-v1'
-const APP_SHELL = ['/', '/app', '/index.html', '/manifest.webmanifest', '/favicon.svg']
+const CACHE_VERSION = 'sendiasporaa-v2'
+const APP_SHELL = ['/manifest.webmanifest', '/favicon.svg']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -15,6 +15,20 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return
+
+  // Always prefer fresh HTML to avoid serving stale app versions.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const cloned = response.clone()
+          caches.open(CACHE_VERSION).then((cache) => cache.put('/index.html', cloned))
+          return response
+        })
+        .catch(() => caches.match('/index.html')),
+    )
+    return
+  }
 
   event.respondWith(
     caches.match(event.request).then((cached) => {

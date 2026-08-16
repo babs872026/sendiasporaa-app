@@ -16,13 +16,17 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return
 
+  const reqUrl = new URL(event.request.url)
+  // Ignore browser-extension and other non-web schemes.
+  if (reqUrl.protocol !== 'http:' && reqUrl.protocol !== 'https:') return
+
   // Always prefer fresh HTML to avoid serving stale app versions.
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
           const cloned = response.clone()
-          caches.open(CACHE_VERSION).then((cache) => cache.put('/index.html', cloned))
+          caches.open(CACHE_VERSION).then((cache) => cache.put('/index.html', cloned)).catch(() => {})
           return response
         })
         .catch(() => caches.match('/index.html')),
@@ -37,7 +41,7 @@ self.addEventListener('fetch', (event) => {
         .then((response) => {
           if (!response || response.status !== 200 || response.type !== 'basic') return response
           const cloned = response.clone()
-          caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, cloned))
+          caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, cloned)).catch(() => {})
           return response
         })
         .catch(() => caches.match('/index.html'))

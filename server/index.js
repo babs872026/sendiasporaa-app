@@ -15,10 +15,35 @@ const allowedOrigins = (process.env.CORS_ORIGINS || '*')
   .map((o) => o.trim())
   .filter(Boolean)
 
+function normalizeOrigin(value) {
+  if (!value) return ''
+  return value.toLowerCase().replace(/\/$/, '')
+}
+
+const exactAllowedOrigins = new Set(
+  allowedOrigins
+    .filter((o) => !o.includes('*'))
+    .map((o) => normalizeOrigin(o)),
+)
+
+const wildcardAllowedOrigins = allowedOrigins
+  .filter((o) => o.includes('*'))
+  .map((o) => normalizeOrigin(o))
+
 function isOriginAllowed(origin) {
   if (!origin) return true;
   if (allowedOrigins.length === 0 || allowedOrigins.includes('*')) return true;
-  return allowedOrigins.includes(origin);
+
+  const normalizedOrigin = normalizeOrigin(origin)
+  if (exactAllowedOrigins.has(normalizedOrigin)) return true
+
+  for (const pattern of wildcardAllowedOrigins) {
+    // Supports patterns like https://*.vercel.app
+    const regex = new RegExp('^' + pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace('\\*', '.*') + '$')
+    if (regex.test(normalizedOrigin)) return true
+  }
+
+  return false
 }
 
 app.use(cors({

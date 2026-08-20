@@ -30,6 +30,11 @@ const wildcardAllowedOrigins = allowedOrigins
   .filter((o) => o.includes('*'))
   .map((o) => normalizeOrigin(o))
 
+function wildcardOriginToRegex(pattern) {
+  const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(`^${escaped.replace(/\*/g, '.*')}$`)
+}
+
 function isOriginAllowed(origin) {
   if (!origin) return true;
   if (allowedOrigins.length === 0 || allowedOrigins.includes('*')) return true;
@@ -39,7 +44,7 @@ function isOriginAllowed(origin) {
 
   for (const pattern of wildcardAllowedOrigins) {
     // Supports patterns like https://*.vercel.app
-    const regex = new RegExp('^' + pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace('\\*', '.*') + '$')
+    const regex = wildcardOriginToRegex(pattern)
     if (regex.test(normalizedOrigin)) return true
   }
 

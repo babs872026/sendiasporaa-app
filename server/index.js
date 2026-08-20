@@ -10,54 +10,16 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 
-const allowedOrigins = (process.env.CORS_ORIGINS || '*')
-  .split(',')
-  .map((o) => o.trim())
-  .filter(Boolean)
-
-function normalizeOrigin(value) {
-  if (!value) return ''
-  return value.toLowerCase().replace(/\/$/, '')
+// Public API: allow browser clients from any origin.
+// Auth is token-based and no cookies are used, so broad CORS is acceptable here.
+const corsOptions = {
+  origin: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }
 
-const exactAllowedOrigins = new Set(
-  allowedOrigins
-    .filter((o) => !o.includes('*'))
-    .map((o) => normalizeOrigin(o)),
-)
-
-const wildcardAllowedOrigins = allowedOrigins
-  .filter((o) => o.includes('*'))
-  .map((o) => normalizeOrigin(o))
-
-function wildcardOriginToRegex(pattern) {
-  const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&')
-  return new RegExp(`^${escaped.replace(/\*/g, '.*')}$`)
-}
-
-function isOriginAllowed(origin) {
-  if (!origin) return true;
-  if (allowedOrigins.length === 0 || allowedOrigins.includes('*')) return true;
-
-  const normalizedOrigin = normalizeOrigin(origin)
-  if (exactAllowedOrigins.has(normalizedOrigin)) return true
-
-  for (const pattern of wildcardAllowedOrigins) {
-    // Supports patterns like https://*.vercel.app
-    const regex = wildcardOriginToRegex(pattern)
-    if (regex.test(normalizedOrigin)) return true
-  }
-
-  return false
-}
-
-app.use(cors({
-  origin(origin, callback) {
-    // Allow server-to-server and non-browser clients with no origin header
-    if (isOriginAllowed(origin)) return callback(null, true)
-    return callback(new Error('Not allowed by CORS'))
-  },
-}));
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017';

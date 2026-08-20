@@ -109,7 +109,14 @@ function requireAuth(req, res, next) {
 }
 
 // Health
-app.get('/health', (req, res) => res.json({ ok: true }));
+app.get('/health', (req, res) => {
+  res.json({
+    ok: true,
+    service: 'notas-backend',
+    commit: process.env.RENDER_GIT_COMMIT || 'local',
+    timestamp: new Date().toISOString(),
+  })
+});
 
 // Auth
 app.post('/auth/register', async (req, res) => {

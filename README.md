@@ -83,6 +83,101 @@ npm run dev
 npm run build
 ```
 
+## Lista de comandos GitHub (Git) - Chuleta rapida
+
+### 1) Subir proyecto a GitHub (nuevo repo)
+
+```powershell
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin https://github.com/USUARIO/REPO.git
+git push -u origin main
+```
+
+### 2) Consultar proyecto
+
+```powershell
+git status
+git branch
+git log --oneline --decorate --graph -n 20
+git remote -v
+```
+
+### 3) Actualizar proyecto (cambios y push)
+
+```powershell
+git add .
+git commit -m "Describe tu cambio"
+git push
+```
+
+Traer cambios remotos:
+
+```powershell
+git pull
+```
+
+### 4) Editar o modificar (commits/ramas)
+
+Cambiar mensaje del ultimo commit:
+
+```powershell
+git commit --amend -m "Nuevo mensaje"
+```
+
+Agregar archivo olvidado al ultimo commit:
+
+```powershell
+git add archivo.txt
+git commit --amend --no-edit
+```
+
+Crear rama nueva:
+
+```powershell
+git checkout -b feature/mi-cambio
+git push -u origin feature/mi-cambio
+```
+
+### 5) Eliminar (archivos/ramas/proyecto)
+
+Eliminar archivo versionado:
+
+```powershell
+git rm archivo.txt
+git commit -m "Remove archivo"
+git push
+```
+
+Eliminar rama local:
+
+```powershell
+git branch -d rama
+```
+
+Eliminar rama remota:
+
+```powershell
+git push origin --delete rama
+```
+
+Eliminar repositorio en GitHub (requiere GitHub CLI):
+
+```powershell
+gh repo delete USUARIO/REPO
+```
+
+### 6) Flujo recomendado diario
+
+```powershell
+git pull
+git add .
+git commit -m "mensaje claro"
+git push
+```
+
 ## Estado actual para publicar (PWA base)
 
 La app ya incluye base PWA:

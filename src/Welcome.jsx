@@ -54,7 +54,7 @@ export default function Welcome() {
   return (
     <div className="welcome-root">
       <div className="welcome-card">
-        <h1 className="welcome-title">Bienvenido a SENDIASPORAA</h1>
+        <h1 className="welcome-title">Bienvenido a BLOG NOTE XL</h1>
         <p>Crea y gestiona tus notas y registros horarios. Inicia sesión para continuar.</p>
         <form onSubmit={doLogin} style={{display:'flex',flexDirection:'column',gap:8}}>
           <input placeholder="usuario" value={user} onChange={e=>{ setUser(e.target.value); setError('') }} />

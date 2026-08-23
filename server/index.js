@@ -10,12 +10,48 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 
-// Public API: allow browser clients from any origin.
-// Auth is token-based and no cookies are used, so broad CORS is acceptable here.
+const DEFAULT_ALLOWED_ORIGINS = [
+  'https://sendiasporaa.com',
+  'https://www.sendiasporaa.com',
+  'https://api.sendiasporaa.com',
+  'https://sendiasporaa-app.vercel.app',
+]
+
+function parseCorsOrigins(value) {
+  if (!value || !value.toString().trim()) return DEFAULT_ALLOWED_ORIGINS
+  const parts = value
+    .toString()
+    .split(',')
+    .map(v => v.trim())
+    .filter(Boolean)
+  return parts.length ? parts : DEFAULT_ALLOWED_ORIGINS
+}
+
+function originMatches(origin, rule) {
+  if (!origin || !rule) return false
+  if (rule === '*') return true
+  if (rule.includes('*')) {
+    const escaped = rule
+      .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+      .replace(/\*/g, '.*')
+    return new RegExp(`^${escaped}$`, 'i').test(origin)
+  }
+  return origin.toLowerCase() === rule.toLowerCase()
+}
+
+const configuredOrigins = parseCorsOrigins(process.env.CORS_ORIGINS)
+
 const corsOptions = {
-  origin: true,
+  origin(origin, callback) {
+    // Requests without Origin (curl/Postman/health checks) are allowed.
+    if (!origin) return callback(null, true)
+    const allowed = configuredOrigins.some(rule => originMatches(origin, rule))
+    if (allowed) return callback(null, true)
+    return callback(new Error(`Origin not allowed by CORS: ${origin}`))
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 204,
 }
 
 app.use(cors(corsOptions));

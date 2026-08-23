@@ -1,5 +1,11 @@
-const CACHE_VERSION = 'sendiasporaa-v2'
+const CACHE_VERSION = 'sendiasporaa-v3'
 const APP_SHELL = ['/manifest.webmanifest', '/favicon.svg']
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting()
+  }
+})
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

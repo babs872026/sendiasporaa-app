@@ -1,16 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { jsPDF } from 'jspdf'
 import './App.css'
-
-function getApiBaseUrl() {
-  if (import.meta.env.VITE_API_BASE) return import.meta.env.VITE_API_BASE.replace(/\/$/, '')
-  if (typeof window === 'undefined') return 'http://localhost:3000'
-  const host = window.location.hostname
-  if (host === 'localhost' || host === '127.0.0.1') return 'http://localhost:3000'
-  return `http://${host}:3000`
-}
-
-const API = getApiBaseUrl()
+import { API } from './apiBase'
 
 function App() {
   const [notes, setNotes] = useState([])
@@ -393,18 +384,26 @@ function App() {
 
   async function register(e){
     e.preventDefault()
-    const res = await fetch(`${API}/auth/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username: authUserField, password: authPassField }) })
-    const data = await res.json()
-    if(res.ok){ setToken(data.token); setAuthUser(data.user.username); localStorage.setItem('token', data.token); localStorage.setItem('username', data.user.username); setAuthUserField(''); setAuthPassField('') }
-    else notify(data.error || 'register error', 'Error')
+    try {
+      const res = await fetch(`${API}/auth/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username: authUserField, password: authPassField }) })
+      const data = await res.json()
+      if(res.ok){ setToken(data.token); setAuthUser(data.user.username); localStorage.setItem('token', data.token); localStorage.setItem('username', data.user.username); setAuthUserField(''); setAuthPassField('') }
+      else notify(data.error || 'register error', 'Error')
+    } catch (err) {
+      notify(`No se pudo conectar con la API (${API}). Revisa VITE_API_BASE y CORS.`, 'Error de red')
+    }
   }
 
   async function login(e){
     e.preventDefault()
-    const res = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username: authUserField, password: authPassField }) })
-    const data = await res.json()
-    if(res.ok){ setToken(data.token); setAuthUser(data.user.username); localStorage.setItem('token', data.token); localStorage.setItem('username', data.user.username); setAuthUserField(''); setAuthPassField('') }
-    else notify(data.error || 'login error', 'Error')
+    try {
+      const res = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username: authUserField, password: authPassField }) })
+      const data = await res.json()
+      if(res.ok){ setToken(data.token); setAuthUser(data.user.username); localStorage.setItem('token', data.token); localStorage.setItem('username', data.user.username); setAuthUserField(''); setAuthPassField('') }
+      else notify(data.error || 'login error', 'Error')
+    } catch (err) {
+      notify(`No se pudo conectar con la API (${API}). Revisa VITE_API_BASE y CORS.`, 'Error de red')
+    }
   }
 
   function logout(){ setToken(''); setAuthUser(''); localStorage.removeItem('token'); localStorage.removeItem('username'); }

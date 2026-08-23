@@ -1,14 +1,5 @@
 import { useState } from 'react'
-
-function getApiBaseUrl() {
-  if (import.meta.env.VITE_API_BASE) return import.meta.env.VITE_API_BASE.replace(/\/$/, '')
-  if (typeof window === 'undefined') return 'http://localhost:3000'
-  const host = window.location.hostname
-  if (host === 'localhost' || host === '127.0.0.1') return 'http://localhost:3000'
-  return `http://${host}:3000`
-}
-
-const API = getApiBaseUrl()
+import { API } from './apiBase'
 
 export default function Welcome() {
   const [user, setUser] = useState('')
@@ -32,7 +23,9 @@ export default function Welcome() {
       } else {
         setError(data.error || 'Error iniciando sesión')
       }
-    } catch (err) { alert(err.message) }
+    } catch (err) {
+      setError(`No se pudo conectar con la API (${API}).`)
+    }
     setLoading(false)
   }
 
@@ -52,7 +45,9 @@ export default function Welcome() {
       } else {
         setError(data.error || 'Error en registro')
       }
-    } catch (err) { alert(err.message) }
+    } catch (err) {
+      setError(`No se pudo conectar con la API (${API}).`)
+    }
     setLoading(false)
   }
 

@@ -15,6 +15,7 @@ const DEFAULT_ALLOWED_ORIGINS = [
   'https://www.sendiasporaa.com',
   'https://api.sendiasporaa.com',
   'https://sendiasporaa-app.vercel.app',
+  'https://sendiasporaa-*.vercel.app',
 ]
 
 function parseCorsOrigins(value) {

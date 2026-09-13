@@ -2,6 +2,8 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '.env') });
 
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { MongoClient, ObjectId } = require('mongodb');
@@ -40,12 +42,20 @@ function originMatches(origin, rule) {
   return origin.toLowerCase() === rule.toLowerCase()
 }
 
+function isLocalDevOrigin(origin) {
+  if (!origin) return false
+  return /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?$/i.test(origin)
+}
+
 const configuredOrigins = parseCorsOrigins(process.env.CORS_ORIGINS)
 
 const corsOptions = {
   origin(origin, callback) {
     // Requests without Origin (curl/Postman/health checks) are allowed.
     if (!origin) return callback(null, true)
+    if (process.env.NODE_ENV !== 'production' && isLocalDevOrigin(origin)) {
+      return callback(null, true)
+    }
     const allowed = configuredOrigins.some(rule => originMatches(origin, rule))
     if (allowed) return callback(null, true)
     return callback(new Error(`Origin not allowed by CORS: ${origin}`))
@@ -57,7 +67,17 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
+app.set('trust proxy', 1);
+app.use(helmet());
 app.use(express.json());
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'too many auth attempts, try again later' },
+})
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017';
 const MONGO_DB = process.env.MONGO_DB || 'app_notas';
@@ -65,8 +85,16 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
 
 let client, db;
 let Users, Notes, TimeEntries;
+let httpServer;
+
+function setCollectionsForTests({ users, notes, timeEntries }) {
+  Users = users;
+  Notes = notes;
+  TimeEntries = timeEntries;
+}
 
 async function start() {
+  if (httpServer) return httpServer;
   client = new MongoClient(MONGO_URI);
   await client.connect();
   db = client.db(MONGO_DB);
@@ -77,7 +105,19 @@ async function start() {
   await Notes.createIndex({ user_id: 1 }).catch(()=>{});
   await TimeEntries.createIndex({ user_id: 1 }).catch(()=>{});
 
-  app.listen(PORT, HOST, () => console.log(`Server listening on ${HOST}:${PORT}`));
+  httpServer = app.listen(PORT, HOST, () => console.log(`Server listening on ${HOST}:${PORT}`));
+  return httpServer;
+}
+
+async function stop() {
+  if (httpServer) {
+    await new Promise(resolve => httpServer.close(resolve));
+    httpServer = null;
+  }
+  if (client) {
+    await client.close();
+    client = null;
+  }
 }
 
 function toPublic(doc) {
@@ -118,7 +158,7 @@ app.get('/health', (req, res) => {
 });
 
 // Auth
-app.post('/auth/register', async (req, res) => {
+app.post('/auth/register', authLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'username and password required' });
@@ -134,7 +174,7 @@ app.post('/auth/register', async (req, res) => {
   }
 });
 
-app.post('/auth/login', async (req, res) => {
+app.post('/auth/login', authLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'username and password required' });
@@ -328,4 +368,13 @@ app.get('/reports/hours', requireAuth, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-start().catch(err => { console.error('Failed to start server:', err); process.exit(1); });
+if (require.main === module) {
+  start().catch(err => { console.error('Failed to start server:', err); process.exit(1); });
+}
+
+module.exports = {
+  app,
+  start,
+  stop,
+  setCollectionsForTests,
+};

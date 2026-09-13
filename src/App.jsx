@@ -1,7 +1,7 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { jsPDF } from 'jspdf'
 import './App.css'
-import { API } from './apiBase'
+import { getApiBaseUrl } from './apiBase'
 
 function App() {
   const [notes, setNotes] = useState([])
@@ -53,6 +53,7 @@ function App() {
   const entriesRef = useRef(null)
   const reportRef = useRef(null)
   const [activeSection, setActiveSection] = useState('notes')
+  const apiBase = getApiBaseUrl()
 
   useEffect(() => { fetchNotes(); fetchEntries(); }, [page, search, token])
 
@@ -80,16 +81,20 @@ function App() {
     const q = search ? `&q=${encodeURIComponent(search)}` : ''
     const df = dateFrom ? `&date_from=${encodeURIComponent(dateFrom)}` : ''
     const dt = dateTo ? `&date_to=${encodeURIComponent(dateTo)}` : ''
-    const res = await fetch(`${API}/notes?page=${page}&limit=${limit}${q}${df}${dt}`, { headers: { 'Content-Type':'application/json', ...authHeaders() } })
+    const res = await fetch(`${apiBase}/notes?page=${page}&limit=${limit}${q}${df}${dt}`, { headers: { 'Content-Type':'application/json', ...authHeaders() } })
     const data = await res.json()
     setNotes(data.items || [])
     setTotal(data.total || 0)
   }
 
   async function createNote(e) {
-    e.preventDefault()
+    if (e && typeof e.preventDefault === 'function') e.preventDefault()
+    if (!token) {
+      notify('Debes iniciar sesión para guardar notas.', 'Sesión requerida')
+      return
+    }
     if (!title.trim()) return notify('Título requerido', 'Error')
-    const res = await fetch(`${API}/notes`, {
+    const res = await fetch(`${apiBase}/notes`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ title, content })
     })
@@ -106,7 +111,7 @@ function App() {
   }
 
   async function deleteNote(id) {
-    await fetch(`${API}/notes/${id}`, { method: 'DELETE', headers: authHeaders() })
+    await fetch(`${apiBase}/notes/${id}`, { method: 'DELETE', headers: authHeaders() })
     // refresh current page
     fetchNotes()
   }
@@ -119,7 +124,7 @@ function App() {
 
   async function saveEdit(id) {
     if (!editingTitle.trim()) return notify('Título requerido', 'Error')
-    const res = await fetch(`${API}/notes/${id}`, {
+    const res = await fetch(`${apiBase}/notes/${id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ title: editingTitle, content: editingContent })
     })
@@ -136,7 +141,7 @@ function App() {
   function cancelEdit(){ setEditingId(null); setEditingTitle(''); setEditingContent('') }
 
   async function fetchEntries() {
-    const res = await fetch(`${API}/time-entries`, { headers: authHeaders() })
+    const res = await fetch(`${apiBase}/time-entries`, { headers: authHeaders() })
     if (!res.ok) {
       // not authenticated or other error -> show empty list
       setEntries([])
@@ -149,7 +154,7 @@ function App() {
   async function createEntry(e) {
     e.preventDefault()
     if (!date || !startTime || !endTime) return notify('Fecha, entrada y salida son requeridos', 'Error')
-    const res = await fetch(`${API}/time-entries`, {
+    const res = await fetch(`${apiBase}/time-entries`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ date, start_time: startTime, end_time: endTime, shift })
     })
@@ -168,7 +173,7 @@ function App() {
     const body = { overtime_weekend_minutes: owWeekend, overtime_holiday_minutes: owHoliday }
     if (overtimeDate) body.date = overtimeDate
     try {
-      const res = await fetch(`${API}/time-entries/overtime`, {
+      const res = await fetch(`${apiBase}/time-entries/overtime`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify(body)
       })
@@ -191,7 +196,7 @@ function App() {
   }
 
   async function deleteEntry(id) {
-    const res = await fetch(`${API}/time-entries/${id}`, { method: 'DELETE', headers: authHeaders() })
+    const res = await fetch(`${apiBase}/time-entries/${id}`, { method: 'DELETE', headers: authHeaders() })
     if (res.ok) {
       fetchEntries()
     } else {
@@ -260,10 +265,28 @@ function App() {
     return parts.join(' — ')
   }
 
+  function getNoteTone(noteId = '') {
+    const tones = ['tone-mango', 'tone-peach', 'tone-pink', 'tone-mint', 'tone-lavender', 'tone-sky']
+    const value = String(noteId)
+    let hash = 0
+    for (let i = 0; i < value.length; i += 1) {
+      hash = (hash + value.charCodeAt(i)) % tones.length
+    }
+    return tones[hash]
+  }
+
+  function buildChecklist(content = '') {
+    const lines = String(content)
+      .split('\n')
+      .map(line => line.trim())
+      .filter(Boolean)
+    return lines.length ? lines : ['(Sin contenido)']
+  }
+
   async function fetchReport(e) {
     e.preventDefault()
     if (!reportMonth) return notify('Selecciona mes', 'Error')
-    const res = await fetch(`${API}/reports/hours?month=${reportMonth}`, { headers: authHeaders() })
+    const res = await fetch(`${apiBase}/reports/hours?month=${reportMonth}`, { headers: authHeaders() })
     const data = await res.json()
     setReport(data)
   }
@@ -385,24 +408,24 @@ function App() {
   async function register(e){
     e.preventDefault()
     try {
-      const res = await fetch(`${API}/auth/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username: authUserField, password: authPassField }) })
+      const res = await fetch(`${apiBase}/auth/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username: authUserField, password: authPassField }) })
       const data = await res.json()
       if(res.ok){ setToken(data.token); setAuthUser(data.user.username); localStorage.setItem('token', data.token); localStorage.setItem('username', data.user.username); setAuthUserField(''); setAuthPassField('') }
       else notify(data.error || 'register error', 'Error')
     } catch (err) {
-      notify(`No se pudo conectar con la API (${API}). Revisa VITE_API_BASE y CORS.`, 'Error de red')
+      notify(`No se pudo conectar con la API (${apiBase}). Revisa VITE_API_BASE y CORS.`, 'Error de red')
     }
   }
 
   async function login(e){
     e.preventDefault()
     try {
-      const res = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username: authUserField, password: authPassField }) })
+      const res = await fetch(`${apiBase}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username: authUserField, password: authPassField }) })
       const data = await res.json()
       if(res.ok){ setToken(data.token); setAuthUser(data.user.username); localStorage.setItem('token', data.token); localStorage.setItem('username', data.user.username); setAuthUserField(''); setAuthPassField('') }
       else notify(data.error || 'login error', 'Error')
     } catch (err) {
-      notify(`No se pudo conectar con la API (${API}). Revisa VITE_API_BASE y CORS.`, 'Error de red')
+      notify(`No se pudo conectar con la API (${apiBase}). Revisa VITE_API_BASE y CORS.`, 'Error de red')
     }
   }
 
@@ -414,16 +437,33 @@ function App() {
     window.dispatchEvent(new PopStateEvent('popstate'))
   }
 
+  const dashboardMonth = reportMonth || new Date().toISOString().slice(0, 7)
+  const dashboardStats = useMemo(() => {
+    const monthEntries = entries.filter(en => en.date && en.date.startsWith(dashboardMonth))
+    const totalMinutes = monthEntries.reduce((acc, en) => acc + Number(en.duration_minutes || 0), 0)
+    const overtimeWeekend = monthEntries.reduce((acc, en) => acc + Number(en.overtime_weekend_minutes || 0), 0)
+    const overtimeHoliday = monthEntries.reduce((acc, en) => acc + Number(en.overtime_holiday_minutes || 0), 0)
+
+    return {
+      monthLabel: formatMonthLabel(dashboardMonth),
+      noteCount: total,
+      shiftCount: monthEntries.filter(en => en.shift !== 'extra').length,
+      normalHours: formatHoursLabel(totalMinutes),
+      overtimeHours: formatHoursLabel(overtimeWeekend + overtimeHoliday),
+    }
+  }, [entries, total, dashboardMonth])
+
   return (
     <div className="app-root">
       <header>
         <div>
           <h1 className="title">Blog de Notas — Cliente</h1>
+          <p className="header-subtitle">Panel productivo para notas, turnos y control mensual.</p>
         </div>
         <div>
           {token ? (
-            <div style={{display:'flex',gap:8,alignItems:'center'}}>
-              <div style={{color:'var(--muted)'}}>Usuario: {authUser}</div>
+            <div className="user-strip">
+              <div>Usuario: {authUser}</div>
               <button className="logout-button" onClick={logoutAndRedirect}>Cerrar sesión</button>
             </div>
           ) : (
@@ -433,6 +473,26 @@ function App() {
           )}
         </div>
       </header>
+
+      <section className="kpi-grid" aria-label="Resumen del mes">
+        <article className="kpi-card">
+          <span className="kpi-label">Mes activo</span>
+          <strong className="kpi-value">{dashboardStats.monthLabel || '-'}</strong>
+        </article>
+        <article className="kpi-card">
+          <span className="kpi-label">Notas totales</span>
+          <strong className="kpi-value">{dashboardStats.noteCount}</strong>
+        </article>
+        <article className="kpi-card">
+          <span className="kpi-label">Turnos del mes</span>
+          <strong className="kpi-value">{dashboardStats.shiftCount}</strong>
+        </article>
+        <article className="kpi-card highlight">
+          <span className="kpi-label">Horas del mes</span>
+          <strong className="kpi-value">{dashboardStats.normalHours} h</strong>
+          <small className="kpi-foot">Extra: {dashboardStats.overtimeHours} h</small>
+        </article>
+      </section>
 
       <div className="nav-blocks">
         <button className={`nav-block ${activeSection === 'notes' ? 'active' : ''}`} onClick={() => scrollToSection(notesRef, 'notes')} aria-label="Crear nota">
@@ -467,34 +527,62 @@ function App() {
 
       <section ref={notesRef} className="panel">
         <h2 className="title">Crear Nota</h2>
-        <form onSubmit={createNote}>
-          <input placeholder="Título" value={title} onChange={e => setTitle(e.target.value)} />
-          <input placeholder="Contenido" value={content} onChange={e => setContent(e.target.value)} />
-          <button type="submit">Crear</button>
+        {!token && (
+          <div className="auth-warning">Inicia sesión para crear y guardar notas en tu cuenta.</div>
+        )}
+        <form onSubmit={createNote} className="create-note-form">
+          <input placeholder="Título" value={title} onChange={e => setTitle(e.target.value)} disabled={!token} />
+          <textarea
+            className="note-content-input"
+            placeholder="Contenido (cada linea sera un punto en tu bloc)"
+            value={content}
+            onChange={e => setContent(e.target.value)}
+            disabled={!token}
+          />
+          <button className="action-btn action-primary" type="submit" onClick={createNote} disabled={!token}>Crear</button>
         </form>
-        <div style={{display:'flex',gap:8, marginBottom:8, flexWrap:'wrap'}}>
+        <div className="notes-toolbar">
           <input placeholder="Buscar notas..." value={search} onChange={e=>{setSearch(e.target.value); setPage(1)}} />
           <input type="date" value={dateFrom} onChange={e=>{setDateFrom(e.target.value); setPage(1)}} />
           <input type="date" value={dateTo} onChange={e=>{setDateTo(e.target.value); setPage(1)}} />
-          <div style={{color:'var(--muted)', alignSelf:'center'}}>{total} resultados</div>
+          <div>{total} resultados</div>
         </div>
         <h3 className="title">Notas</h3>
         <ul>
+          {notes.length === 0 && (
+            <li className="empty-state">No hay notas en este filtro. Crea la primera para iniciar tu tablero.</li>
+          )}
           {notes.map(n => (
             <li key={n.id}>
               {editingId === n.id ? (
-                <div style={{display:'flex',gap:8, flex:1}}>
+                <div className="edit-row">
                   <input value={editingTitle} onChange={e=>setEditingTitle(e.target.value)} />
-                  <input value={editingContent} onChange={e=>setEditingContent(e.target.value)} />
-                  <button onClick={()=>saveEdit(n.id)}>Guardar</button>
-                  <button onClick={cancelEdit}>Cancelar</button>
+                  <textarea
+                    className="note-content-input compact"
+                    value={editingContent}
+                    onChange={e=>setEditingContent(e.target.value)}
+                  />
+                  <button className="action-btn action-success" onClick={()=>saveEdit(n.id)}>Guardar</button>
+                  <button className="action-btn action-ghost" onClick={cancelEdit}>Cancelar</button>
                 </div>
               ) : (
                 <>
-                  <div style={{flex:1}}><strong>{n.title}</strong> — {n.content}</div>
-                  <div>
-                    <button onClick={() => startEdit(n)}>Editar</button>
-                    <button onClick={() => confirmDeleteNote(n.id)}>Eliminar</button>
+                  <article className={`todo-note ${getNoteTone(n.id)}`}>
+                    <header className="todo-note-header">
+                      <strong>{n.title}</strong>
+                    </header>
+                    <ul className="todo-checklist">
+                      {buildChecklist(n.content).map((line, idx) => (
+                        <li key={`${n.id}-${idx}`}>
+                          <span className="todo-dot" aria-hidden />
+                          <span>{line}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
+                  <div className="note-actions">
+                    <button className="action-btn action-ghost" onClick={() => startEdit(n)}>Editar</button>
+                    <button className="action-btn action-danger" onClick={() => confirmDeleteNote(n.id)}>Eliminar</button>
                   </div>
                 </>
               )}
@@ -502,10 +590,10 @@ function App() {
           ))}
         </ul>
 
-        <div style={{display:'flex',gap:8, justifyContent:'flex-end', marginTop:8}}>
-          <button onClick={()=>{ if(page>1) setPage(p=>p-1) }} disabled={page<=1}>Anterior</button>
-          <div style={{alignSelf:'center'}}>{page} / {Math.max(1, Math.ceil(total/limit))}</div>
-          <button onClick={()=>{ if(page < Math.ceil(total/limit)) setPage(p=>p+1) }} disabled={page>=Math.ceil(total/limit)}>Siguiente</button>
+        <div className="notes-pagination">
+          <button className="action-btn action-ghost" onClick={()=>{ if(page>1) setPage(p=>p-1) }} disabled={page<=1}>Anterior</button>
+          <div className="page-indicator">{page} / {Math.max(1, Math.ceil(total/limit))}</div>
+          <button className="action-btn action-ghost" onClick={()=>{ if(page < Math.ceil(total/limit)) setPage(p=>p+1) }} disabled={page>=Math.ceil(total/limit)}>Siguiente</button>
         </div>
       </section>
 
@@ -532,7 +620,7 @@ function App() {
               <option value="night">Turno noche</option>
             </select>
           </label>
-          <button type="submit">Agregar registro</button>
+          <button className="action-btn action-primary" type="submit">Agregar registro</button>
         </form>
 
         <h3 className="title">Horas extra</h3>
@@ -549,11 +637,14 @@ function App() {
             Horas extra festivo
             <input type="number" step="0.25" min="0" value={overtimeHolidayHours} onChange={e => setOvertimeHolidayHours(e.target.value)} placeholder="0,00" />
           </label>
-          <button type="submit">Agregar horas extra</button>
+          <button className="action-btn action-secondary" type="submit">Agregar horas extra</button>
         </form>
 
         <h3 className="title">Entradas</h3>
         <ul>
+          {paginatedEntries.length === 0 && (
+            <li className="empty-state">Aún no hay registros horarios. Agrega una jornada para empezar a medir el mes.</li>
+          )}
           {paginatedEntries.map(en => {
             const overtimeText = renderOvertimeText(en)
             return (
@@ -567,16 +658,16 @@ function App() {
                   <span>{formatShiftLabel(en.shift)}</span>
                 </div>
                 {overtimeText && <div className="entry-overtime">{overtimeText}</div>}
-                <button className="entry-delete" onClick={() => confirmDeleteEntry(en.id)}>Eliminar</button>
+                <button className="entry-delete action-btn action-danger" onClick={() => confirmDeleteEntry(en.id)}>Eliminar</button>
               </li>
             )
           })}
         </ul>
         {entries.length > entryPageSize && (
           <div className="entry-pagination">
-            <button onClick={() => setEntryPage(p => Math.max(1, p - 1))} disabled={entryPage <= 1}>Anterior</button>
+            <button className="action-btn action-ghost" onClick={() => setEntryPage(p => Math.max(1, p - 1))} disabled={entryPage <= 1}>Anterior</button>
             <span>Página {entryPage} / {totalEntryPages}</span>
-            <button onClick={() => setEntryPage(p => Math.min(totalEntryPages, p + 1))} disabled={entryPage >= totalEntryPages}>Siguiente</button>
+            <button className="action-btn action-ghost" onClick={() => setEntryPage(p => Math.min(totalEntryPages, p + 1))} disabled={entryPage >= totalEntryPages}>Siguiente</button>
           </div>
         )}
       </section>
@@ -608,11 +699,11 @@ function App() {
             Horario habitual
             <input value={reportSchedule} onChange={e => setReportSchedule(e.target.value)} placeholder="Ej: 08:00 - 17:00" />
           </label>
-          <button type="submit">Ver reporte</button>
-          <button type="button" onClick={generateReportPdf}>Descargar PDF</button>
+          <button className="action-btn action-primary" type="submit">Ver reporte</button>
+          <button className="action-btn action-secondary" type="button" onClick={generateReportPdf}>Descargar PDF</button>
         </form>
         {report && (
-          <div>
+          <div className="report-summary">
             <p>Mes: {report.month}</p>
             <p>Total horas (registro): {report.total_hours}</p>
             <p>Total minutos (registro): {report.total_minutes}</p>

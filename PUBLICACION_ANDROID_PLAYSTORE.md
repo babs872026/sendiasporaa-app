@@ -76,6 +76,22 @@ cd App-Notas/android-twa
 npx @bubblewrap/cli build
 ```
 
+Si Bubblewrap falla por entorno en Windows, esta alternativa ya validada en este repo funciona:
+
+```powershell
+cd App-Notas/android-twa
+.\gradlew.bat assembleRelease --no-daemon --stacktrace
+.\gradlew.bat bundleRelease --no-daemon --stacktrace
+```
+
+Ruta esperada del bundle para Google Play:
+
+- `android-twa/app/build/outputs/bundle/release/app-release.aab`
+
+Ruta del APK de validacion local:
+
+- `android-twa/app/build/outputs/apk/release/app-release-unsigned.apk`
+
 Si el asistente no genera AAB directo, abre el proyecto en Android Studio y ejecuta:
 
 - Build > Generate Signed Bundle / APK
@@ -118,3 +134,13 @@ Cada vez que publiques cambios web importantes:
 ## 12) Siguiente paso recomendado
 
 Crear y publicar una primera build en Internal testing para validar el pipeline completo sin riesgo.
+
+## 13) Estado actual en este repo
+
+Ya quedaron generados y validados estos elementos:
+
+- Proyecto TWA en `android-twa/`
+- Keystore local en `android-twa/android.keystore`
+- Bundle Play Store en `android-twa/app/build/outputs/bundle/release/app-release.aab`
+
+No subas el keystore al repositorio. Debe guardarse fuera de Git y con copia de seguridad.

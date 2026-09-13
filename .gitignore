@@ -24,3 +24,12 @@ server/.env
 *.njsproj
 *.sln
 *.sw?
+
+# Android TWA
+android-twa/.gradle/
+android-twa/build/
+android-twa/app/build/
+android-twa/local.properties
+android-twa/*.keystore
+android-twa/*.jks
+

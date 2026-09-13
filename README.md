@@ -262,6 +262,11 @@ Flujo de dominio:
 
 ## Roadmap de publicación en tiendas
 
+Guia operativa detallada en este repo:
+
+- Android (Google Play con TWA): [PUBLICACION_ANDROID_PLAYSTORE.md](PUBLICACION_ANDROID_PLAYSTORE.md)
+- macOS (ruta separada): [PUBLICACION_MACOS.md](PUBLICACION_MACOS.md)
+
 ### Android (Google Play)
 
 Ruta rápida recomendada: PWA + TWA (Bubblewrap).
@@ -296,12 +301,12 @@ Opciones:
 
 ## Siguiente paso sugerido
 
-Con el dominio aún pendiente, el siguiente hito operativo es:
+Con dominio y deployment ya activos, el siguiente hito operativo es:
 
-1. Registrar dominio `SenDiasporaa`.
-2. Desplegar a Vercel o Netlify.
-3. Validar PWA en HTTPS.
-4. Iniciar empaquetado Android (TWA) en track interno.
+1. Ejecutar la guia [PUBLICACION_ANDROID_PLAYSTORE.md](PUBLICACION_ANDROID_PLAYSTORE.md).
+2. Generar primer `.aab` y subirlo a Internal testing en Google Play.
+3. Validar la app en dispositivos Android reales.
+4. Planificar la ruta macOS con [PUBLICACION_MACOS.md](PUBLICACION_MACOS.md).
 
 ## Rutas y endpoints
 

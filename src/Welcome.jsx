@@ -57,7 +57,6 @@ export default function Welcome() {
       <div className="welcome-card">
         <h1 className="welcome-title">Bienvenido a Blog Notas XL</h1>
         <p className="welcome-subtitle">Crea y gestiona tus notas y registros horarios. Inicia sesión para continuar.</p>
-        <p className="welcome-api">API activa: {apiBase}</p>
         <form onSubmit={doLogin} className="welcome-form">
           <input placeholder="usuario" value={user} onChange={e=>{ setUser(e.target.value); setError('') }} />
           <input placeholder="contraseña" type="password" value={pass} onChange={e=>{ setPass(e.target.value); setError('') }} onKeyDown={e => { if (e.key === 'Enter') doLogin(e) }} />

@@ -657,6 +657,7 @@
   .app-root {
     margin: 12px auto 98px;
     gap: 12px;
+    padding-bottom: calc(118px + env(safe-area-inset-bottom, 0px));
   }
 
   .app-root > header {
@@ -672,14 +673,14 @@
   .bottom-nav {
     position: fixed;
     left: 50%;
-    bottom: 12px;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
     transform: translateX(-50%);
-    width: min(560px, calc(100% - 18px));
+    width: min(560px, calc(100% - 16px));
     border-radius: 999px;
     border: 1px solid var(--line-strong);
     background: rgba(255, 251, 245, 0.94);
     box-shadow: var(--shadow-soft);
-    padding: 8px;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
     display: flex;
     justify-content: space-around;
     z-index: 50;

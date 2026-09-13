@@ -1,12 +1,35 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192" role="img" aria-label="SenDiasporaa">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#00d4a6"/>
-      <stop offset="100%" stop-color="#00b48b"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fff7ed"/>
+      <stop offset="52%" stop-color="#f5efe4"/>
+      <stop offset="100%" stop-color="#dce9e5"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fffdf9"/>
+      <stop offset="100%" stop-color="#fff0df"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#c5522b"/>
+      <stop offset="100%" stop-color="#de6f3a"/>
+    </linearGradient>
+    <linearGradient id="teal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#126e67"/>
+      <stop offset="100%" stop-color="#1f8b82"/>
     </linearGradient>
   </defs>
-  <rect x="8" y="8" width="176" height="176" rx="40" fill="#0b1220"/>
-  <circle cx="96" cy="96" r="58" fill="url(#g)"/>
-  <path d="M77 103h38" stroke="#fff" stroke-width="12" stroke-linecap="round"/>
-  <path d="M85 85l30 30" stroke="#fff" stroke-width="12" stroke-linecap="round"/>
+  <rect x="8" y="8" width="176" height="176" rx="44" fill="#102033"/>
+  <circle cx="56" cy="42" r="34" fill="#d58a67" opacity="0.22"/>
+  <circle cx="154" cy="28" r="26" fill="#9dc7bf" opacity="0.28"/>
+  <rect x="24" y="24" width="144" height="144" rx="36" fill="url(#bg)"/>
+  <g transform="translate(44 38)">
+    <path d="M20 0h58l26 26v66c0 11-9 20-20 20H20C9 112 0 103 0 92V20C0 9 9 0 20 0z" fill="url(#paper)"/>
+    <path d="M78 0v17c0 7 6 13 13 13h13z" fill="#ffd7bf"/>
+    <rect x="16" y="28" width="50" height="8" rx="4" fill="url(#accent)" opacity="0.96"/>
+    <rect x="16" y="46" width="70" height="6" rx="3" fill="#cfc4b4"/>
+    <rect x="16" y="61" width="58" height="6" rx="3" fill="#cfc4b4"/>
+    <rect x="16" y="76" width="66" height="6" rx="3" fill="#cfc4b4"/>
+    <circle cx="82" cy="84" r="22" fill="url(#teal)"/>
+    <path d="M82 72v12l8 5" fill="none" stroke="#fffdf9" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
 </svg>
